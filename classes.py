@@ -7,6 +7,7 @@ Ce code définie les classes qui vont être utilisées par la suite dans le proj
 import numpy as np
 import pylops
 from pylops.optimization.sparsity import ISTA
+print("test")
 class random:  
     def matrix_normal(n,p,mu=0,sigma=1):  # n est le nombre de lignes et p le nombre des colonnes, mu est la moyenne et sigma est l'écart type
         return (np.random.randn(n,p)*(sigma**2))+mu
