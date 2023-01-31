@@ -27,58 +27,24 @@ class algo:
                                                         tol=0, returninfo=True) 
         return(beta,niter,cost)
 
-    #On reprend dans cette partie le travail de Anastasios Kyrillidis qui a déja travaillé sur l'algorithme IHT.
+    
     # Hard thresholding function
-def hardThreshold(x, k):
-    p = x.shape[0]
-    t = np.sort(np.abs(x))[::-1]    
-    threshold = t[k-1]
-    j = (np.abs(x) < threshold)
-    x[j] = 0
-    return x
+def SoftThreshold(X, lamda):
+    return np.sign(x) * np.maximum(np.abs(x) - lamda, 0)
 
-# Returns the value of the objecive function
-def f(y, A, x):
-    return 0.5 * math.pow(la.norm(y - Phi @ x, 2), 2)
+def SoftThreshol(X, lamda):
+    return np.sign(x) * np.maximum(np.abs(x) - lamda, 0)
 
-def IHT(y, A, k, iters, epsilon, verbose, x_star):
-    # Length of original signal
-    p = A.shape[1]
-    # Length of measurement vector
-    n = A.shape[0]
-    # Initial estimate
-    x_new = np.zeros(p)    
-    # Transpose of A
-    At = np.transpose(A)
-
-    # Initialize
-    x_new = np.zeros(p)           # The algorithm starts at x = 0
-
-    PhiT = np.transpose(Phi)
-    
-    x_list, f_list = [1], [f(y, Phi, x_new)]
-
-    for i in range(iters):
-        x_old = x_new
-    
-        # Compute gradient
-        grad = -PhiT @ (y - Phi @ x_new)
-    
-        # Perform gradient step
-        x_temp = x_old - grad    
-    
-        # Perform hard thresholding step
-        x_new = hardThreshold(x_temp, k)
-    
-        if (la.norm(x_new - x_old, 2) / la.norm(x_new, 2)) < epsilon:
+def IHT(X, Y, lamda, max_iterations=100, tol=1e-6):
+    m, n = Y.shape
+    x = np.zeros(n)
+    v = X.copy()
+    history = []
+    for i in range(max_iterations):
+        x_new = SoftThreshold(D.T @ v + x_new, lamda)
+        v = X - Y @ x_new
+        if np.linalg.norm(x_new - x) < tol:
+            history.append(0.5 * np.linalg.norm(X - Y @ x_new)**2 + lamda * np.linalg.norm(x_new, ord=1))
             break
-                
-        # Keep track of solutions and objective values
-        x_list.append(la.norm(x_new - x_star, 2))
-        f_list.append(f(y, Phi, x_new))
-        
-        if verbose:
-            print("iter# = "+ str(i) + ", ||x_new - x_old||_2 = " + str(la.norm(x_new - x_old, 2)))
-    
-    print("Number of steps:", len(f_list))
-    return x_new, x_list, f_list
+        z = x_new.copy()
+    return x, history
