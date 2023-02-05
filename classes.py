@@ -16,7 +16,11 @@ class random:
     def beta(a,s,n): # s et a sont à préciser tel que s= 0,1*p et n> 2*s*log(p/2) pour commencer on peut utilisr a=1
         return a*(np.random.binomial(1,s/n , size=(n,)))
     def outcome(n,p,a,s,mu=0,sigma=1):
-        return matrix_normal(n,p,mu,sigma) @ beta(a,s,p)+vect_normal(n,mu,sigma)
+        X=matrix_normal(n,p,mu,sigma)
+        beta=beta(a,s,p)
+        epsilon=ect_normal(n,mu,sigma)
+        Y=X @ beta+epsilon
+        return Y,X,beta,epsilon
 
 
 #la classe algo contient les algorithmes qui seront utilisés nottament ISTA et IHT
@@ -29,22 +33,18 @@ class algo:
 
     
     # Hard thresholding function
-def SoftThreshold(X, lamda):
-    return np.sign(x) * np.maximum(np.abs(x) - lamda, 0)
-
-def SoftThreshol(X, lamda):
-    return np.sign(x) * np.maximum(np.abs(x) - lamda, 0)
-
-def IHT(X, Y, lamda, max_iterations=100, tol=1e-6):
-    m, n = Y.shape
-    x = np.zeros(n)
-    v = X.copy()
-    history = []
-    for i in range(max_iterations):
-        x_new = SoftThreshold(D.T @ v + x_new, lamda)
-        v = X - Y @ x_new
-        if np.linalg.norm(x_new - x) < tol:
-            history.append(0.5 * np.linalg.norm(X - Y @ x_new)**2 + lamda * np.linalg.norm(x_new, ord=1))
-            break
-        z = x_new.copy()
-    return x, history
+    def SoftThreshold(x, lamda):
+        return np.sign(x) * np.maximum(np.abs(x) - lamda, 0)
+    def IHT(x, D, lamda, max_iterations=100, tol=1e-6):
+        m, n = D.shape
+        z = np.zeros(n)
+        v = x.copy()
+        J = []
+        for i in range(max_iterations):
+            z_new = SoftThreshold(D.T @ v + z, lamda)
+            v = x - D @ z_new
+            if np.linalg.norm(z_new - z) < tol:
+                break
+            z = z_new.copy()
+            J.append(0.5 * np.linalg.norm(x - D @ z_new)**2 + lamda * np.linalg.norm(z_new, ord=1))
+        return z,J
