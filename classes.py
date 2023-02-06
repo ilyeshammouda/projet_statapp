@@ -7,6 +7,7 @@ Ce code définie les classes qui vont être utilisées par la suite dans le proj
 import numpy as np
 import pylops
 from pylops.optimization.sparsity import ISTA
+from pylops.optimization.sparsity import FISTA
 print("test")
 class random:  
     def matrix_normal(n,p,mu=0,sigma=1):  # n est le nombre de lignes et p le nombre des colonnes, mu est la moyenne et sigma est l'écart type
@@ -16,9 +17,9 @@ class random:
     def beta(a,s,n): # s et a sont à préciser tel que s= 0,1*p et n> 2*s*log(p/2) pour commencer on peut utilisr a=1
         return a*(np.random.binomial(1,s/n , size=(n,)))
     def outcome(n,p,a,s,mu=0,sigma=1):
-        X=matrix_normal(n,p,mu,sigma)
-        beta=beta(a,s,p)
-        epsilon=ect_normal(n,mu,sigma)
+        X=random.matrix_normal(n,p,mu,sigma)
+        beta=random.beta(a,s,p)
+        epsilon=random.vect_normal(n,mu,sigma)
         Y=X @ beta+epsilon
         return Y,X,beta,epsilon
 
@@ -32,18 +33,18 @@ class algo:
         return(beta,niter,cost)
     def fista(X,Y,n,alpha):
         Op=pylops.MatrixMult(X)
-        beta, niter, cost = pylops.optimization.sparsity.fista(Op, Y, n, eps=alpha)
+        beta, niter, cost = pylops.optimization.sparsity.FISTA(Op, Y, n, eps=alpha,tol=0, returninfo=True)
         return(beta,niter,cost)
     # Hard thresholding function
     def SoftThreshold(x, lamda):
         return np.sign(x) * np.maximum(np.abs(x) - lamda, 0)
-    def IHT(x, D, lamda, max_iterations=100, tol=1e-6):
+    def IHT(x, D, max_iterations=100,lamda=0.01, tol=1e-6):
         m, n = D.shape
         z = np.zeros(n)
         v = x.copy()
         J = []
         for i in range(max_iterations):
-            z_new = SoftThreshold(D.T @ v + z, lamda)
+            z_new = algo.SoftThreshold(D.T @ v + z, lamda)
             v = x - D @ z_new
             if np.linalg.norm(z_new - z) < tol:
                 break
