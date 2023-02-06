@@ -30,8 +30,10 @@ class algo:
         beta, niter, cost = pylops.optimization.sparsity.ISTA(Op, Y, n, eps=alpha, # n est le nombre maximal d'itération, le vecteur beta contient la solution du problème d'optimisation, et finalement cost represente l'historique de la fonction de coût
                                                         tol=0, returninfo=True) 
         return(beta,niter,cost)
-
-    
+    def fista(X,Y,n,alpha):
+        Op=pylops.MatrixMult(X)
+        beta, niter, cost = pylops.optimization.sparsity.fista(Op, Y, n, eps=alpha)
+        return(beta,niter,cost)
     # Hard thresholding function
     def SoftThreshold(x, lamda):
         return np.sign(x) * np.maximum(np.abs(x) - lamda, 0)
