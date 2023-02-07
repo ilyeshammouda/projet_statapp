@@ -1,5 +1,5 @@
 '''
-Ce code définie les classes qui vont être utilisées par la suite dans le projet 
+Ce code définit les classes qui vont être utilisées par la suite dans le projet 
 '''
 
 
