@@ -5,7 +5,7 @@ Ce code définit les classes qui vont être utilisées par la suite dans le proj
 
 #la Classe random contient les fonctions qui simulent les variables aléatoires qui seront utilisée pour étudier les données simulés.
 import numpy as np
-import pylops
+!pip install pylops
 from pylops.optimization.sparsity import ISTA
 from pylops.optimization.sparsity import FISTA
 print("test")
