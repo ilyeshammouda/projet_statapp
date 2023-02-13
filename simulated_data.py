@@ -147,4 +147,4 @@ print('la pente de la fonction de coût générée par ISTA vaut', slopeISTA)
 slopeFISTA = numpy.polyfit(nbr_it,cost_fista,1)[0]
 print( 'la pente de la fonction de coût générée par FISTA vaut', slopeFISTA)
 
-#donc l'algorithme FISTA converge bien plus rapidement que l'algorithme IISTA puisque sa pente est plus grande 
+#donc l'algorithme FISTA converge bien plus rapidement que l'algorithme IISTA puisque sa pente est plus grande
