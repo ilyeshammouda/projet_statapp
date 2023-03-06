@@ -26,28 +26,49 @@ class random:
 
 #la classe algo contient les algorithmes qui seront utilisés nottament ISTA et IHT
 class algo:
-    def ista(X,Y,n,alpha): #pour executer cet algorithme il faut installer la version 1.5 de pylops. Pour ceci on utilise la commande "pip install  pylops==1.5 "
+    def ista_pylops(X,Y,n,alpha): #pour executer cet algorithme il faut installer la version 1.5 de pylops. Pour ceci on utilise la commande "pip install  pylops==1.5 "
         Op=pylops.MatrixMult(X)
         beta, niter, cost = pylops.optimization.sparsity.ISTA(Op, Y, n, eps=alpha, # n est le nombre maximal d'itération, le vecteur beta contient la solution du problème d'optimisation, et finalement cost represente l'historique de la fonction de coût
                                                         tol=0, returninfo=True) 
         return(beta,niter,cost)
-    def fista(X,Y,n,alpha):
+    def fista_pylops(X,Y,n,alpha):
         Op=pylops.MatrixMult(X)
         beta, niter, cost = pylops.optimization.sparsity.FISTA(Op, Y, n, eps=alpha,tol=0, returninfo=True)
         return(beta,niter,cost)
     # Hard thresholding function
     def SoftThreshold(x, lamda):
         return np.sign(x) * np.maximum(np.abs(x) - lamda, 0)
-    def IHT(x, D, max_iterations=100,lamda=0.01, tol=1e-6):
+    def HardThreshold(x,lamda):
+        return x*(np.abs(x)>=lamda)
+    
+    def IHT(x, D, step,beta ,max_iterations=100,lamda=0.01, tol=1e-6):
         m, n = D.shape
         z = np.zeros(n)
         v = x.copy()
         J = []
+        loss=[]
         for i in range(max_iterations):
-            z_new = algo.SoftThreshold(D.T @ v + z, lamda)
+            z_new = algo.HardThreshold((step*D.T )@ v + z, lamda)
             v = x - D @ z_new
             if np.linalg.norm(z_new - z) < tol:
                 break
             z = z_new.copy()
+            loss.append(np.linlag(z_new-beta))
             J.append(0.5 * np.linalg.norm(x - D @ z_new)**2 + lamda * np.linalg.norm(z_new, ord=1))
-        return z,J
+        return z,J,loss
+
+    def ISTA(x, D, step,beta ,max_iterations=100,lamda=0.01, tol=1e-6):
+        m, n = D.shape
+        z = np.zeros(n)
+        v = x.copy()
+        J = []
+        loss=[]
+        for i in range(max_iterations):
+            z_new = algo.SoftThreshold((step*D.T )@ v + z, lamda)
+            v = x - D @ z_new
+            if np.linalg.norm(z_new - z) < tol:
+                break
+            z = z_new.copy()
+            loss.append(np.linlag(z_new-beta))
+            J.append(0.5 * np.linalg.norm(x - D @ z_new)**2 + lamda * np.linalg.norm(z_new, ord=1))
+        return z,J,loss
