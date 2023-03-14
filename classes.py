@@ -3,11 +3,20 @@ Ce code définit les classes qui vont être utilisées par la suite dans le proj
 '''
 
 
-#la Classe random contient les fonctions qui simulent les variables aléatoires qui seront utilisée pour étudier les données simulés.
+
 import numpy as np
 import pylops
 from pylops.optimization.sparsity import ISTA
 from pylops.optimization.sparsity import FISTA
+import pandas as pd
+import time
+'''
+Ce code définit les classes qui vont être utilisées par la suite dans le projet 
+'''
+
+
+#la Classe random contient les fonctions qui simulent les variables aléatoires qui seront utilisée pour étudier les données simulés.
+
 print("test")
 class random:  
     def matrix_normal(n,p,mu=0,sigma=1):  # n est le nombre de lignes et p le nombre des colonnes, mu est la moyenne et sigma est l'écart type
@@ -26,49 +35,62 @@ class random:
 
 #la classe algo contient les algorithmes qui seront utilisés nottament ISTA et IHT
 class algo:
-    def ista_pylops(X,Y,n,alpha): #pour executer cet algorithme il faut installer la version 1.5 de pylops. Pour ceci on utilise la commande "pip install  pylops==1.5 "
-        Op=pylops.MatrixMult(X)
-        beta, niter, cost = pylops.optimization.sparsity.ISTA(Op, Y, n, eps=alpha, # n est le nombre maximal d'itération, le vecteur beta contient la solution du problème d'optimisation, et finalement cost represente l'historique de la fonction de coût
-                                                        tol=0, returninfo=True) 
-        return(beta,niter,cost)
-    def fista_pylops(X,Y,n,alpha):
-        Op=pylops.MatrixMult(X)
-        beta, niter, cost = pylops.optimization.sparsity.FISTA(Op, Y, n, eps=alpha,tol=0, returninfo=True)
-        return(beta,niter,cost)
-    # Hard thresholding function
-    def SoftThreshold(x, lamda):
-        return np.sign(x) * np.maximum(np.abs(x) - lamda, 0)
+
+
     def HardThreshold(x,lamda):
         return x*(np.abs(x)>=lamda)
-    
-    def IHT(x, D, step,beta ,max_iterations=100,lamda=0.01, tol=1e-6):
-        m, n = D.shape
-        z = np.zeros(n)
-        v = x.copy()
-        J = []
-        loss=[]
-        for i in range(max_iterations):
-            z_new = algo.HardThreshold((step*D.T )@ v + z, lamda)
-            v = x - D @ z_new
-            if np.linalg.norm(z_new - z) < tol:
-                break
-            z = z_new.copy()
-            loss.append(np.linlag(z_new-beta))
-            J.append(0.5 * np.linalg.norm(x - D @ z_new)**2 + lamda * np.linalg.norm(z_new, ord=1))
-        return z,J,loss
+    def SoftThreshold(x, threshold):
+        return np.sign(x) * np.maximum(np.abs(x) - threshold, 0)
 
-    def ISTA(x, D, step,beta ,max_iterations=100,lamda=0.01, tol=1e-6):
-        m, n = D.shape
-        z = np.zeros(n)
-        v = x.copy()
-        J = []
+
+    def IHT(X, Y,beta=np.zeros(1) ,C=0.9,step=0.0001,max_iterations=3000,lamda=0.1, tol=1e-6,sparse='False'):
+        n,m=X.shape
+        Z,Beta=np.zeros(m),np.ones(m)
         loss=[]
+        cost=[]
+        check_vect=np.zeros(m)
+        test=np.zeros(1)
+        if np.array_equal(beta, test, equal_nan=False):
+          beta=Beta.copy()
+          print('We are in the unknow beta case,the cost function is not significant')
+        start_time = time.time()        
         for i in range(max_iterations):
-            z_new = algo.SoftThreshold((step*D.T )@ v + z, lamda)
-            v = x - D @ z_new
-            if np.linalg.norm(z_new - z) < tol:
+            Z=Beta+(step*(X.T)@(Y-X@Beta))
+            Beta=algo.HardThreshold(Z, lamda)
+            if sparse=='True':
+                Beta= np.where(np.isclose(Beta, 1, atol=0.8), 1, 0)
+            cost.append(np.linalg.norm(-beta+Beta))
+            lamda*=C
+            loss.append(Beta[-1]-Beta[-2])
+            if np.linalg.norm(Beta -check_vect ) < tol:
                 break
-            z = z_new.copy()
-            loss.append(np.linlag(z_new-beta))
-            J.append(0.5 * np.linalg.norm(x - D @ z_new)**2 + lamda * np.linalg.norm(z_new, ord=1))
-        return z,J,loss
+        end_time = time.time()
+        time_taken = end_time - start_time
+        print("IHT execution time :", time_taken, "seconds")
+
+        return Beta,cost,loss
+
+    def ISTA(X, Y,beta=np.zeros(1) ,step=0.0001,max_iterations=3000,lamda=0.01, tol=1e-6,sparse='False'):
+        n,m=X.shape
+        Z,Beta=np.zeros(m),np.ones(m)
+        check_vect=np.zeros(m)
+        test=np.zeros(1)
+        cost=[]
+        loss=[]
+        if np.array_equal(beta, test, equal_nan=False):
+          beta=Beta.copy()
+          print('We are in the unknow beta case,the cost function is not significant')
+        start_time = time.time()
+        for i in range(max_iterations):
+            Z=Beta+(step*(X.T)@(Y-X@Beta))
+            Beta=algo.SoftThreshold(Z, lamda)
+            if sparse=='True':
+              Beta= np.where(np.isclose(Beta, 1, atol=0.8), 1, 0)
+            cost.append(np.linalg.norm(-beta+Beta))
+            loss.append(Beta[-1]-Beta[-2])
+            if np.linalg.norm(Beta -check_vect ) < tol:
+                break
+        end_time = time.time()
+        time_taken = end_time - start_time
+        print("ISTA execution time :", time_taken, "seconds")
+        return Beta,cost,loss
